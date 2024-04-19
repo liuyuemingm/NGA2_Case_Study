@@ -10,7 +10,12 @@ ny :	64
 nz :	1
 
 # Case parameters
-Droplet diameter : 0.01
+Droplet diameter : 0.048
+
+# from jet
+Jet radius :   5e-3
+Jet velocity : 0.1
+Box height :   0.01
 
 # Fluid properties
 Gravity :                     0 -9.81 0
@@ -24,7 +29,7 @@ Static contact angle :        140
 # Time integration
 Max timestep size : 5e-4
 Max cfl number :    0.9
-Max time :          1
+Max time :          2
 
 # Pressure solver
 Pressure tolerance : 1e-4

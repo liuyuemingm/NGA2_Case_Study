@@ -1,7 +1,7 @@
 !> Various definitions and tools for running an NGA2 simulation
 module simulation
    use precision,         only: WP
-   use geometry,          only: cfg
+   use geometry,          only: cfg,wheight
    use hypre_str_class,   only: hypre_str
    use ddadi_class,       only: ddadi
    use tpns_class,        only: tpns
@@ -40,7 +40,7 @@ module simulation
    
    !> Problem definition
    real(WP), dimension(3) :: center
-   real(WP) :: radius,depth
+   real(WP) :: radius,depth,Ujet
    
 contains
 
@@ -91,6 +91,7 @@ contains
       create_and_initialize_vof: block
          use mms_geom,  only: cube_refine_vol
          use vfs_class, only: lvira,VFhi,VFlo
+         
          integer :: i,j,k,n,si,sj,sk
          real(WP), dimension(3,8) :: cube_vertex
          real(WP), dimension(3) :: v_cent,a_cent
@@ -99,10 +100,10 @@ contains
          ! Create a VOF solver
          call vf%initialize(cfg=cfg,reconstruction_method=lvira,name='VOF',store_detailed_flux=.true.)
          ! Initialize to a droplet and a pool
-         center=[0.0_WP,0.05_WP,0.0_WP]
+         center=[0.0_WP,0.035_WP,0.0_WP]
          !radius=0.005_WP
          call param_read('Droplet diameter',radius); radius=radius/2.0_WP
-         depth =0.02_WP
+         depth =0.00_WP
          do k=vf%cfg%kmino_,vf%cfg%kmaxo_
             do j=vf%cfg%jmino_,vf%cfg%jmaxo_
                do i=vf%cfg%imino_,vf%cfg%imaxo_
@@ -152,6 +153,7 @@ contains
       create_and_initialize_flow_solver: block
          use hypre_str_class, only: pcg_pfmg2
          use mathtools,       only: Pi
+         use tpns_class,      only: bcond,dirichlet,clipped_neumann
          ! Create flow solver
          fs=tpns(cfg=cfg,name='Two-phase NS')
          ! Assign constant viscosity to each phase
@@ -166,6 +168,14 @@ contains
          fs%contact_angle=fs%contact_angle*Pi/180.0_WP
          ! Assign acceleration of gravity
          call param_read('Gravity',fs%gravity)
+         ! Dirichlet inflow at the top
+         !call fs%add_bcond(name='bc_yp_dir',type=dirichlet,face='y',dir=+1,canCorrect=.false.,locator=yp_locator)
+         ! Outflow at the top
+         call fs%add_bcond(name='bc_yp_cn',type=clipped_neumann,face='y',dir=+1,canCorrect=.true.,locator=yp_locator)
+         ! Outflow on the sides
+         ! ???
+         ! call fs%add_bcond(name='bc_xp',type=clipped_neumann,face='x',dir=+1,canCorrect=.true.,locator=xp_locator)
+         ! call fs%add_bcond(name='bc_xm',type=clipped_neumann,face='x',dir=-1,canCorrect=.true.,locator=xm_locator)
          ! Configure pressure solver
          ps=hypre_str(cfg=cfg,name='Pressure',method=pcg_pfmg2,nst=7)
          ps%maxlevel=10
@@ -447,6 +457,41 @@ contains
       deallocate(resSC,resU,resV,resW,Ui,Vi,Wi)
       
    end subroutine simulation_final
+
+   !> Function that localizes the y+ side of the domain
+   function yp_locator(pg,i,j,k) result(isIn)
+      use pgrid_class, only: pgrid
+      implicit none
+      class(pgrid), intent(in) :: pg
+      integer, intent(in) :: i,j,k
+      logical :: isIn
+      isIn=.false.
+      if (j.eq.pg%jmax+1) isIn=.true.
+   end function yp_locator
+
+
+   !> Function that localizes the x+ side of the domain
+   function xp_locator(pg,i,j,k) result(isIn)
+      use pgrid_class, only: pgrid
+      implicit none
+      class(pgrid), intent(in) :: pg
+      integer, intent(in) :: i,j,k
+      logical :: isIn
+      isIn=.false.
+      if (i.eq.pg%imax+1.and.pg%ym(j).gt.wheight) isIn=.true.
+   end function xp_locator
    
    
+   !> Function that localizes the x- side of the domain
+   function xm_locator(pg,i,j,k) result(isIn)
+      use pgrid_class, only: pgrid
+      implicit none
+      class(pgrid), intent(in) :: pg
+      integer, intent(in) :: i,j,k
+      logical :: isIn
+      isIn=.false.
+      if (i.eq.pg%imin.and.pg%ym(j).gt.wheight) isIn=.true.
+   end function xm_locator
+
+
 end module simulation
