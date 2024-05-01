@@ -93,7 +93,29 @@ contains
          call param_read('Number of particles',np)
          if (lp%cfg%amRoot) then
             call lp%resize(np)
-            do i=1,np
+            do i=1,np/2
+               ! Give id
+               lp%p(i)%id=int(i,8)
+               ! Set the diameter
+               lp%p(i)%d=dp/2_WP
+               ! Assign random position in the domain
+               lp%p(i)%pos=[random_uniform(lp%cfg%x(lp%cfg%imin),lp%cfg%x(lp%cfg%imax+1)),&
+               &            random_uniform(lp%cfg%y(lp%cfg%jmin),lp%cfg%y(lp%cfg%jmax+1)),&
+               &            random_uniform(lp%cfg%z(lp%cfg%kmin),lp%cfg%z(lp%cfg%kmax+1))]
+               if (cfg%nz.eq.1) lp%p(i)%pos(3)=lp%cfg%zm(lp%cfg%kmin_)
+               ! Give zero velocity
+               lp%p(i)%vel=0.0_WP
+               ! Give zero collision force
+               lp%p(i)%Acol=0.0_WP
+               lp%p(i)%Tcol=0.0_WP
+               ! Give zero dt
+               lp%p(i)%dt=0.0_WP
+               ! Locate the particle on the mesh
+               lp%p(i)%ind=lp%cfg%get_ijk_global(lp%p(i)%pos,[lp%cfg%imin,lp%cfg%jmin,lp%cfg%kmin])
+               ! Activate the particle
+               lp%p(i)%flag=0
+            end do
+            do i=np/2+1,np
                ! Give id
                lp%p(i)%id=int(i,8)
                ! Set the diameter
