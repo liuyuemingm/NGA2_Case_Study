@@ -77,11 +77,11 @@ contains
                do i=cfg%imino_,cfg%imaxo_
                   ! Side walls
                   ! ???
-                  !if (cfg%ym(j).lt.wheight.and.cfg%ym(j).gt.0.0_WP) then
-                  !   if (abs(cfg%xm(i)).gt.0.5_WP*cfg%xL.or.abs(cfg%zm(k)).gt.0.5_WP*cfg%zL) cfg%VF(i,j,k)=0.0_WP
-                  !end if
+                  if (cfg%ym(j).lt.wheight.and.cfg%ym(j).gt.0.0_WP) then
+                     if (abs(cfg%xm(i)).gt.0.5_WP*cfg%xL.or.abs(cfg%zm(k)).gt.0.5_WP*cfg%zL) cfg%VF(i,j,k)=0.0_WP
+                  end if
                   ! Bottom wall
-                  !if (cfg%ym(j).lt.0.0_WP) cfg%VF(i,j,k)=0.0_WP
+                  if (cfg%ym(j).lt.0.0_WP) cfg%VF(i,j,k)=0.0_WP
                end do
             end do
          end do

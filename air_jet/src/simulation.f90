@@ -53,8 +53,7 @@ contains
       ! Add the pool
       G=max(G,depth-xyz(2))
       ! Add the jet
-      ! ???
-      G=j_radius-sqrt(xyz(1)**2+xyz(3)**2)
+      ! G=j_radius-sqrt(xyz(1)**2+xyz(3)**2)
    end function levelset_falling_drop
    
    
@@ -99,7 +98,6 @@ contains
          call vf%initialize(cfg=cfg,reconstruction_method=lvira,transport_method=remap,name='VOF')
          ! Initialize to a droplet and a pool
          center=[0.0_WP,0.06_WP,0.0_WP]
-         !radius=0.005_WP
          call param_read('Droplet diameter',d_radius); d_radius=d_radius/2.0_WP
          call param_read('Jet radius',j_radius)
          depth =0.03_WP
@@ -173,13 +171,7 @@ contains
          ! Dirichlet inflow at the top
          call fs%add_bcond(name='bc_yp_dt',type=dirichlet,face='y',dir=+1,canCorrect=.false.,locator=yp_dt_locator)
          ! Outflow at the top
-         ! ??? can correct?
          call fs%add_bcond(name='bc_yp_cn',type=clipped_neumann,face='y',dir=+1,canCorrect=.true.,locator=yp_cn_locator)
-         
-         ! Outflow on the sides
-         ! ??? does not make difference?
-         ! call fs%add_bcond(name='bc_xp',type=clipped_neumann,face='x',dir=+1,canCorrect=.true.,locator=xp_locator)
-         ! call fs%add_bcond(name='bc_xm',type=clipped_neumann,face='x',dir=-1,canCorrect=.true.,locator=xm_locator)
          
          ! Configure pressure solver
          ps=hypre_str(cfg=cfg,name='Pressure',method=pcg_pfmg2,nst=7)
@@ -410,7 +402,8 @@ contains
       integer, intent(in) :: i,j,k
       logical :: isIn
       isIn=.false.
-      if (j.eq.pg%jmax+1.and.pg%xm(i).lt.0.035.and.pg%xm(i).gt.0.025) isIn=.true.
+      if (j.eq.pg%jmax+1.and.pg%xm(i).lt.0.035_WP.and.pg%xm(i).gt.0.025_WP) isIn=.true.
+      
    end function yp_dt_locator
 
    !> Function that localizes the y+ side of the domain for clipped_neumann BC
@@ -421,32 +414,7 @@ contains
       integer, intent(in) :: i,j,k
       logical :: isIn
       isIn=.false.
-      if (j.eq.pg%jmax+1.and.pg%xm(i).gt.0.035.and.pg%xm(i).lt.0.025) isIn=.true.
+      if (j.eq.pg%jmax+1.and.pg%xm(i).gt.0.035_WP) isIn=.true.
+      if (j.eq.pg%jmax+1.and.pg%xm(i).lt.0.025_WP) isIn=.true.
    end function yp_cn_locator
-
-
-   !> Function that localizes the x+ side of the domain
-   function xp_locator(pg,i,j,k) result(isIn)
-      use pgrid_class, only: pgrid
-      implicit none
-      class(pgrid), intent(in) :: pg
-      integer, intent(in) :: i,j,k
-      logical :: isIn
-      isIn=.false.
-      if (i.eq.pg%imax+1.and.pg%ym(j).gt.wheight) isIn=.true.
-   end function xp_locator
-   
-   
-   !> Function that localizes the x- side of the domain
-   function xm_locator(pg,i,j,k) result(isIn)
-      use pgrid_class, only: pgrid
-      implicit none
-      class(pgrid), intent(in) :: pg
-      integer, intent(in) :: i,j,k
-      logical :: isIn
-      isIn=.false.
-      if (i.eq.pg%imin.and.pg%ym(j).gt.wheight) isIn=.true.
-   end function xm_locator
-
-
-end module simulation
+end
