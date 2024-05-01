@@ -62,22 +62,6 @@ contains
       
       
       ! Create masks for this config
-      !create_walls: block
-      !   use mathtools, only: twoPi
-      !   integer :: i,j,k
-      !   cfg%VF=1.0_WP ! VF is volumn fraction of fluid
-      !   do k=cfg%kmino_,cfg%kmaxo_
-      !      do j=cfg%jmino_,cfg%jmaxo_
-      !         do i=cfg%imino_,cfg%imaxo_
-      !            if (cfg%ym(j).lt.0.0_WP) then
-      !               cfg%VF(i,j,k)=0.0_WP
-      !            end if
-      !         end do
-      !      end do
-      !   end do
-      !end block create_walls
-
-      ! Create masks for this config
       create_walls: block
          use mathtools, only: twoPi
          integer :: i,j,k
@@ -85,14 +69,8 @@ contains
          do k=cfg%kmino_,cfg%kmaxo_
             do j=cfg%jmino_,cfg%jmaxo_
                do i=cfg%imino_,cfg%imaxo_
-                  if (cfg%ym(j).lt.0.0_WP) then
-                     cfg%VF(i,j,k)=0.0_WP
-                  end if
-                  if (mod(i, 4) == 0 .and. cfg%ym(j).lt.0.00025_WP) then
-                     cfg%VF(i,j,k)=0.0_WP
-                  end if
-                  if (mod(i, 4) == 1 .and. cfg%ym(j).lt.0.00025_WP) then
-                     cfg%VF(i,j,k)=0.0_WP
+                  if (cfg%ym(j).lt.0.0_WP) then ! if below some y
+                     cfg%VF(i,j,k)=0.0_WP ! it's all wall
                   end if
                end do
             end do
