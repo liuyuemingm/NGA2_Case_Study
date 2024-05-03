@@ -36,25 +36,20 @@ module simulation
    real(WP), dimension(:,:,:), allocatable :: Ui,Vi,Wi
    
    !> Problem definition
-   real(WP), dimension(3) :: center
-   real(WP) :: d_radius,j_radius,depth,Ujet
+   real(WP) :: j_radius,depth,Ujet
    
 contains
 
 
-   !> Function that defines a level set function for a falling drop problem
-   function levelset_falling_drop(xyz,t) result(G)
+   !> Function that defines a level set function for a pool
+   function levelset_pool(xyz,t) result(G)
       implicit none
       real(WP), dimension(3),intent(in) :: xyz
       real(WP), intent(in) :: t
       real(WP) :: G
-      ! Create the droplet
-      G=d_radius-sqrt(sum((xyz-center)**2))
-      ! Add the pool
-      G=max(G,depth-xyz(2))
-      ! Add the jet
-      ! G=j_radius-sqrt(xyz(1)**2+xyz(3)**2)
-   end function levelset_falling_drop
+      ! Create a pool
+      G=depth-xyz(2)
+   end function levelset_pool
    
    
    !> Initialization of problem solver
@@ -96,10 +91,7 @@ contains
          integer, parameter :: amr_ref_lvl=4
          ! Create a VOF solver
          call vf%initialize(cfg=cfg,reconstruction_method=lvira,transport_method=remap,name='VOF')
-         ! Initialize to a droplet and a pool
-         center=[0.0_WP,0.06_WP,0.0_WP]
-         call param_read('Droplet diameter',d_radius); d_radius=d_radius/2.0_WP
-         call param_read('Jet radius',j_radius)
+         ! Initialize to a pool
          depth =0.03_WP
          do k=vf%cfg%kmino_,vf%cfg%kmaxo_
             do j=vf%cfg%jmino_,vf%cfg%jmaxo_
@@ -115,7 +107,7 @@ contains
                   end do
                   ! Call adaptive refinement code to get volume and barycenters recursively
                   vol=0.0_WP; area=0.0_WP; v_cent=0.0_WP; a_cent=0.0_WP
-                  call cube_refine_vol(cube_vertex,vol,area,v_cent,a_cent,levelset_falling_drop,0.0_WP,amr_ref_lvl)
+                  call cube_refine_vol(cube_vertex,vol,area,v_cent,a_cent,levelset_pool,0.0_WP,amr_ref_lvl)
                   vf%VF(i,j,k)=vol/vf%cfg%vol(i,j,k)
                   if (vf%VF(i,j,k).ge.VFlo.and.vf%VF(i,j,k).le.VFhi) then
                      vf%Lbary(:,i,j,k)=v_cent
@@ -168,6 +160,9 @@ contains
          fs%contact_angle=fs%contact_angle*Pi/180.0_WP
          ! Assign acceleration of gravity
          call param_read('Gravity',fs%gravity)
+         
+
+         call param_read('Jet radius',j_radius)
          ! Dirichlet inflow at the top
          call fs%add_bcond(name='bc_yp_dt',type=dirichlet,face='y',dir=+1,canCorrect=.false.,locator=yp_dt_locator)
          ! Outflow at the top
@@ -191,7 +186,7 @@ contains
          do n=1,mybc%itr%no_
             i=mybc%itr%map(1,n); j=mybc%itr%map(2,n); k=mybc%itr%map(3,n)
             myr=sqrt(fs%cfg%xm(i)**2+fs%cfg%zm(k)**2)/j_radius
-            fs%V(i,j,k)=min(0.0_WP,-2.0_WP*Ujet*(1.0_WP-myr**2))
+            fs%V(i,j,k)=-2.0_WP*Ujet*(1.0_WP-myr**2)
          end do
          
          ! Adjust MFR for global mass balance
@@ -340,7 +335,7 @@ contains
             call fs%update_laplacian()
             call fs%correct_mfr()
             call fs%get_div()
-            call fs%add_surface_tension_jump(dt=time%dt,div=fs%div,vf=vf,contact_model=static_contact)
+            call fs%add_surface_tension_jump(dt=time%dt,div=fs%div,vf=vf)!,contact_model=static_contact)
             fs%psolv%rhs=-fs%cfg%vol*fs%div/time%dt
             fs%psolv%sol=0.0_WP
             call fs%psolv%solve()
@@ -402,7 +397,7 @@ contains
       integer, intent(in) :: i,j,k
       logical :: isIn
       isIn=.false.
-      if (j.eq.pg%jmax+1.and.pg%xm(i).lt.0.035_WP.and.pg%xm(i).gt.0.025_WP) isIn=.true.
+      if (j.eq.pg%jmax+1.and.abs(pg%xm(i)).lt.j_radius) isIn=.true.
       
    end function yp_dt_locator
 
@@ -414,7 +409,7 @@ contains
       integer, intent(in) :: i,j,k
       logical :: isIn
       isIn=.false.
-      if (j.eq.pg%jmax+1.and.pg%xm(i).gt.0.035_WP) isIn=.true.
-      if (j.eq.pg%jmax+1.and.pg%xm(i).lt.0.025_WP) isIn=.true.
+      if (j.eq.pg%jmax+1.and.abs(pg%xm(i)).gt.j_radius) isIn=.true.
    end function yp_cn_locator
-end
+
+end module

@@ -48,8 +48,8 @@ contains
          end do
          
          ! General serial grid object
-         ! ???
-         grid=sgrid(coord=cartesian,no=3,x=x,y=y,z=z,xper=.false.,yper=.false.,zper=.false.,name='FallingDrop')
+         !grid=sgrid(coord=cartesian,no=3,x=x,y=y,z=z,xper=.false.,yper=.false.,zper=.false.,name='FallingDrop')
+         grid=sgrid(coord=cartesian,no=3,x=x,y=y,z=z,xper=.false.,yper=.false.,zper=.true.,name='FallingDrop')
          
       end block create_grid
       
@@ -67,19 +67,14 @@ contains
       
       ! Create masks for this config
       create_walls: block
-         use mathtools, only: twoPi
          integer :: i,j,k
-         ! Read in wall height
-         call param_read('Box height',wheight)
          cfg%VF=1.0_WP
          do k=cfg%kmino_,cfg%kmaxo_
             do j=cfg%jmino_,cfg%jmaxo_
                do i=cfg%imino_,cfg%imaxo_
                   ! Side walls
-                  ! ???
-                  if (cfg%ym(j).lt.wheight.and.cfg%ym(j).gt.0.0_WP) then
-                     if (abs(cfg%xm(i)).gt.0.5_WP*cfg%xL.or.abs(cfg%zm(k)).gt.0.5_WP*cfg%zL) cfg%VF(i,j,k)=0.0_WP
-                  end if
+                  !if (abs(cfg%xm(i)).gt.0.5_WP*cfg%xL.or.abs(cfg%zm(k)).gt.0.5_WP*cfg%zL) cfg%VF(i,j,k)=0.0_WP
+                  if (abs(cfg%xm(i)).gt.0.5_WP*cfg%xL) cfg%VF(i,j,k)=0.0_WP
                   ! Bottom wall
                   if (cfg%ym(j).lt.0.0_WP) cfg%VF(i,j,k)=0.0_WP
                end do
