@@ -3,10 +3,10 @@ Partition :	4 1 1
 
 # Mesh definition
 Lx :	0.06
-Ly :	0.06
+Ly :	0.12
 Lz :	0.001
 nx :	64
-ny :	64
+ny :	128
 nz :	1
 
 # Case parameters
@@ -14,7 +14,7 @@ Droplet diameter : 0.00
 
 # from jet
 Jet radius :   0.01
-Jet velocity : 12
+Jet velocity : 10
 Box height :   0.01
 
 # Fluid properties
@@ -27,7 +27,7 @@ Surface tension coefficient : 0.0728
 Static contact angle :        140
 
 # Time integration
-Max timestep size : 2e-5
+Max timestep size : 2e-4
 Max cfl number :    0.9
 Max time :          2
 
